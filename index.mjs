@@ -8,7 +8,7 @@ export class BitMexPlus extends BitMEXWs {
     super(options);
     this.options = options;
     this.rateLimit = {
-      limit: 0
+      limit: 0,
       remaining: 0,
       reset: 0
     }
