@@ -7,6 +7,11 @@ export class BitMexPlus extends BitMEXWs {
   constructor(options) {
     super(options);
     this.options = options;
+    this.rateLimit = {
+      limit: this.options.testnet ? 150 : 300,
+      remaining: this.options.testnet ? 150 : 300,
+      reset: Math.floor(new Date().getTime() / 1000)
+    }
   }
 
   /**
@@ -73,7 +78,12 @@ export class BitMexPlus extends BitMEXWs {
     const apiBase = this.options.testnet ? 'https://testnet.bitmex.com' : 'https://www.bitmex.com';
     const url = apiBase + apiRoot + endpoint + query;
 
-    return fetch(url, requestOptions).then(response => response.json()).then(
+    return fetch(url, requestOptions).then(response => {
+      for (let key in this.rateLimit) {
+        this.rateLimit[key] = +response.headers.get('x-ratelimit-' + key);
+      };
+      return response.json();
+    }).then(
       response => {
         if ('error' in response)
           throw new Error(`${response.error.message} during ${verb} ${endpoint} with ${JSON.stringify(data)}`);
