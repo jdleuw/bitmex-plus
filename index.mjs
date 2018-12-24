@@ -47,14 +47,14 @@ export class BitMexPlus extends BitMEXWs {
         } else if (!retries) {
           reject();
         } else {
-          reties--
+          retries--;
           setTimeout(() => {
             check();
           }, 1000)
         }
       }
       check();
-    }
+    });
   }
 
   /**
