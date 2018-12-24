@@ -8,9 +8,52 @@ export class BitMexPlus extends BitMEXWs {
     super(options);
     this.options = options;
     this.rateLimit = {
-      limit: this.options.testnet ? 150 : 300,
-      remaining: this.options.testnet ? 150 : 300,
-      reset: Math.floor(new Date().getTime() / 1000)
+      limit: 0
+      remaining: 0,
+      reset: 0
+    }
+
+    this.init();
+  }
+
+  /**
+   * Make an initial request for populating the rate limit
+   */
+  init() {
+
+    // Ensure we have at least 1 request available
+    this.rateLimit.remaining = 1;
+
+    this.makeRequest('GET', '').then(response => {
+      this.offsetTime = new Date().getTime() - response.timestamp;
+
+      // Update remaining rate limit every second with rate per second
+      setInterval(() => {
+        this.rateLimit.remaining = Math.min(this.rateLimit.limit, this.rateLimit.remaining + this.rateLimit.limit / 300);
+        console.log('Current remaining: ', this.rateLimit.remaining);
+      }, 1000);
+    })
+  }
+
+  throttle(limit) {
+
+    // Decrease our limit in case other parallel requests are incoming
+    this.rateLimit.remaining--;
+    return new Promise((resolve, reject) => {
+      let retries = 9;
+      const check = () => {
+        if (this.rateLimit.remaining > limit) {
+          resolve();
+        } else if (!retries) {
+          reject();
+        } else {
+          reties--
+          setTimeout(() => {
+            check();
+          }, 1000)
+        }
+      }
+      check();
     }
   }
 
@@ -40,9 +83,10 @@ export class BitMexPlus extends BitMEXWs {
    * @param {string} verb - GET/PUT/POST/DELETE
    * @param {string} endpoint - e.g. `/user/margin`
    * @param {object} data - JSON
+   * @param {number} limit - Minimal remaining limit required to proceed
    * @returns {Promise<object>} - JSON response
    */
-  makeRequest(verb, endpoint, data = {}) {
+  makeRequest(verb, endpoint, data = {}, limit = 10) {
     const apiRoot = '/api/v1/';
 
     let query = '', postBody = '';
@@ -78,7 +122,7 @@ export class BitMexPlus extends BitMEXWs {
     const apiBase = this.options.testnet ? 'https://testnet.bitmex.com' : 'https://www.bitmex.com';
     const url = apiBase + apiRoot + endpoint + query;
 
-    return fetch(url, requestOptions).then(response => {
+    return this.throttle(limit).then(() => fetch(url, requestOptions)).then(response => {
       for (let key in this.rateLimit) {
         this.rateLimit[key] = +response.headers.get('x-ratelimit-' + key);
       };
