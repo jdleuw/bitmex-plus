@@ -2,6 +2,9 @@ import BitMEXWs from 'bitmex-realtime-api';
 import crypto from 'crypto';
 import qs from 'qs';
 import fetch from 'node-fetch';
+import * as debugModule from 'debug';
+
+let debug = debugModule('bitmex-plus');
 
 export class BitMexPlus extends BitMEXWs {
   constructor(options) {
@@ -24,13 +27,13 @@ export class BitMexPlus extends BitMEXWs {
     // Ensure we have at least 1 request available
     this.rateLimit.remaining = 1;
 
-    this.makeRequest('GET', '').then(response => {
+    this.makeRequest('GET', '', {}, -1).then(response => {
       this.offsetTime = new Date().getTime() - response.timestamp;
 
       // Update remaining rate limit every second with rate per second
       setInterval(() => {
         this.rateLimit.remaining = Math.min(this.rateLimit.limit, this.rateLimit.remaining + this.rateLimit.limit / 300);
-        console.log('Current remaining: ', this.rateLimit.remaining);
+        debug('Calculated remaining limit: ', this.rateLimit.remaining);
       }, 1000);
     })
   }
@@ -40,17 +43,19 @@ export class BitMexPlus extends BitMEXWs {
     // Decrease our limit in case other parallel requests are incoming
     this.rateLimit.remaining--;
     return new Promise((resolve, reject) => {
-      let retries = 9;
+      let retries = 400;
       const check = () => {
         if (this.rateLimit.remaining > limit) {
           resolve();
-        } else if (!retries) {
-          reject();
         } else {
           retries--;
-          setTimeout(() => {
-            check();
-          }, 1000)
+          if (!retries) {
+            reject();
+          } else {
+            setTimeout(() => {
+              check();
+            }, 250);
+          }
         }
       }
       check();
@@ -126,6 +131,7 @@ export class BitMexPlus extends BitMEXWs {
       for (let key in this.rateLimit) {
         this.rateLimit[key] = +response.headers.get('x-ratelimit-' + key);
       };
+      debug('Fetched remaining limit: ', this.rateLimit.remaining);
       return response.json();
     }).then(
       response => {
