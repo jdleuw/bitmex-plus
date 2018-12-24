@@ -2,9 +2,8 @@ import BitMEXWs from 'bitmex-realtime-api';
 import crypto from 'crypto';
 import qs from 'qs';
 import fetch from 'node-fetch';
-import * as debugModule from 'debug';
 
-let debug = debugModule('bitmex-plus');
+const debug = require('debug')('bitmex-plus');
 
 export class BitMexPlus extends BitMEXWs {
   constructor(options) {
