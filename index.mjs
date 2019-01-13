@@ -38,7 +38,7 @@ export class BitMexPlus extends BitMEXWs {
   }
 
   getServerTime() {
-    return new Date(new Date().getTime() - app.client.offsetTime);
+    return new Date(new Date().getTime() - this.offsetTime);
   }
 
   throttle(limit) {
