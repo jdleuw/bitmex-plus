@@ -31,6 +31,9 @@ export class BitMexPlus extends BitMEXWs {
 
       // Update remaining rate limit every second with rate per second
       setInterval(() => {
+        if (isNaN(parseInt(this.rateLimit.remaining, 10))) {
+          this.rateLimit.remaining = 0;
+        }
         this.rateLimit.remaining = Math.min(this.rateLimit.limit, this.rateLimit.remaining + this.rateLimit.limit / 300);
         debug('Calculated remaining limit: ', this.rateLimit.remaining);
       }, 1000);
@@ -53,7 +56,7 @@ export class BitMexPlus extends BitMEXWs {
         } else {
           retries--;
           if (!retries) {
-            reject();
+            reject('No more retries');
           } else {
             setTimeout(() => {
               check();
