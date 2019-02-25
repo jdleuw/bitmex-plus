@@ -10,7 +10,7 @@ export class BitMexPlus extends BitMEXWs {
     super(options);
     this.options = options;
     this.rateLimit = {
-      limit: 0,
+      limit: 150,
       remaining: 0,
       reset: 0
     }
@@ -42,8 +42,8 @@ export class BitMexPlus extends BitMEXWs {
   }
 
   setRateLimit(key, value) {
-    if (isNaN(value)) {
-      value = 10;
+    if (isNaN(value) || value < 1) {
+      value = key === 'limit' ? 150 : 10;
     }
     this.rateLimit[key] = parseInt(value, 10);
   }

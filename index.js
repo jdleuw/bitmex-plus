@@ -30,7 +30,7 @@ class BitMexPlus extends _bitmexRealtimeApi2.default {
     super(options);
     this.options = options;
     this.rateLimit = {
-      limit: 0,
+      limit: 150,
       remaining: 0,
       reset: 0
     };
@@ -62,8 +62,8 @@ class BitMexPlus extends _bitmexRealtimeApi2.default {
   }
 
   setRateLimit(key, value) {
-    if (isNaN(value)) {
-      value = 10;
+    if (isNaN(value) || value < 1) {
+      value = key === 'limit' ? 150 : 10;
     }
     this.rateLimit[key] = parseInt(value, 10);
   }
